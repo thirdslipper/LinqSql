@@ -8,9 +8,6 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 // add reference to mysql.data, then change mysql.data property to copy local = true.
 using MySql.Data.MySqlClient;
 using System.Diagnostics;
@@ -22,17 +19,21 @@ namespace LINQSQL
 {
     class DBConnect
     {
+
         private MySqlConnection connection;
         private string server;
         private string database;
         private string userid;
         private string password;
+
         static void Main(string[] args)
         {
             DBConnect dbconnect = new DBConnect();
+            dbconnect.CreateTable();
+            dbconnect.Insert();
+            Console.ReadKey();
         }
-
-        public DBConnect() 
+        public DBConnect()
         {
             initialize();
         }
@@ -42,16 +43,24 @@ namespace LINQSQL
         /// admin   : serveradmin
         /// pw      : a123456A
         /// </summary>
-        private void initialize()   
+        private void initialize()
         {
             server = "localhost";
             database = "connectcsharptomysql";
-            userid = "username";
-            password = "password";
-            string connectionString = "SERVER=" + server + ";" + "DATABASE=" +
-                database + ";" + userid + ";" + "PASSWORD=" + password + ";";
+            // database = "kings_raid_items";
+            // userid = "username";
+            // password = "password";
+            userid = "root";
+            password = "";
+            string connectionString = "server=" + server + ";" + "port=3306;" + "database=" + database + ";" 
+                + "userid=" + userid + ";" + "password=" + password + ";" + "SslMode=none;";
+            //   connectionString = "Server=localhost; Port=3306; Database=kings_raid_items; Uid=java; Password=test; SslMode=none";
+            //   Console.WriteLine(connectionString);
             connection = new MySqlConnection(connectionString);
+            Console.WriteLine("wrote connection");
+
         }
+
         private bool OpenConnection()
         {
             try
@@ -64,10 +73,10 @@ namespace LINQSQL
                 switch (ex.Number)
                 {
                     case 0:
-                        MessageBox.Show("Cannot connect to server.");
+                        MessageBox.Show(ex.ToString());
                         break;
                     case 1045:
-                        MessageBox.Show("Invalid username/password");
+                        MessageBox.Show(ex.ToString());
                         break;
                 }
                 return false;
@@ -86,6 +95,17 @@ namespace LINQSQL
                 return false;
             }
         }
+        public void CreateTable()
+        {
+            string query = "CREATE TABLE tableinfo ( id INT NOT NULL AUTO_INCREMENT, name VARCHAR(30), age TINYINT UNSIGNED, PRIMARY KEY(id));";
+            if (this.OpenConnection())
+            {
+                MySqlCommand cmd = new MySqlCommand(query, connection);
+                cmd.ExecuteNonQuery();
+                this.CloseConnection();
+                Console.WriteLine("Added table!");
+            }
+        }
         private void Insert()
         {
             string query = "INSERT INTO tableinfo (name, age) VALUES ('John Smith', '33')";
@@ -96,6 +116,7 @@ namespace LINQSQL
 
                 cmd.ExecuteNonQuery();
                 this.CloseConnection();
+                Console.WriteLine("Added value!");
             }
         }
         private void Update()
@@ -122,7 +143,7 @@ namespace LINQSQL
                 this.CloseConnection();
             }
         }
-        public List <string>[] Select()
+        public List<string>[] Select()
         {
             string query = "SELECT * FROM tableinfo";
             List<string>[] list = new List<string>[3];
@@ -157,8 +178,8 @@ namespace LINQSQL
             if (this.OpenConnection())
             {
                 MySqlCommand cmd = new MySqlCommand(query, connection);
-                    //returns the first column of first row of result set, or null
-                bool result = int.TryParse(cmd.ExecuteScalar()+"", out Count);
+                //returns the first column of first row of result set, or null
+                bool result = int.TryParse(cmd.ExecuteScalar() + "", out Count);
                 //default method used is Count = int.Parse(cmd.ExecuteScalar()+ "");
             }
             return Count;
@@ -198,7 +219,7 @@ namespace LINQSQL
             }
             catch (IOException ex)
             {
-                MessageBox.Show("Error, unable to backup"); 
+                MessageBox.Show("Error, unable to backup");
             }
         }
         //filename -u username -p password -h localhost DBName < "C:\Backup.sql"
