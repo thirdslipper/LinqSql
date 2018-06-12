@@ -15,8 +15,9 @@ namespace LINQSQL
             AzureConnect databaseObject = new AzureConnect();
             //Console.WriteLine(databaseObject.ModifyConnection("open"));
             //Console.WriteLine(databaseObject.connection.Ping());
-            databaseObject.CreateTable();
-            databaseObject.Insert();
+            //databaseObject.CreateTable();
+            //databaseObject.Insert();
+            //databaseObject.ReadData();
             Console.ReadKey();
         }
 
@@ -59,9 +60,39 @@ namespace LINQSQL
                     return true;
                 return false;
             }
-            catch
+            catch (Exception ex) 
             {
+                Console.WriteLine(ex.ToString());
                 return false;
+            }
+        }
+        private void ReadData()
+        {
+            try
+            {
+                if (this.ModifyConnection("open"))
+                {
+                    MySqlCommand selectStatement = new MySqlCommand("SELECT * FROM exercises;", connection);
+
+                    MySqlDataReader reader = selectStatement.ExecuteReader();
+                    StringBuilder resultsFromReader = new StringBuilder();
+                    while (reader.Read())
+                    {
+                        for (int i = 0; i < reader.FieldCount; ++i)
+                        {
+                            resultsFromReader.AppendFormat("{0, -13}", reader[i]);
+                        }
+                        resultsFromReader.AppendLine();
+                    }
+                    Console.WriteLine(resultsFromReader.ToString());
+                    reader.Close();
+                }
+                this.ModifyConnection("close");
+            }
+            catch (MySqlException ex)
+            {
+                this.ModifyConnection("close");
+                Console.WriteLine("Error, " + ex.ToString());
             }
         }
 
@@ -132,13 +163,12 @@ namespace LINQSQL
                 string input;
                 do
                 {
-                    Console.WriteLine("Enter: exercise_name, difficulty (beginner, intermediate, advanced), rating(0-10), description, body part1, body part 2, ...bodypart n");
+                    Console.WriteLine("Enter: exercise_name, difficulty (beginner, "
+                        + "intermediate, advanced), rating(0-10), description, body part1, body part 2, ...bodypart n");
                     input = Console.ReadLine();
                 } while (input.Split(' ').Length < 4);
 
                 string[] inputSplit = input.Split(new string[] { ", " }, System.StringSplitOptions.RemoveEmptyEntries);
-                //          StringBuilder insertToExercises = new StringBuilder("INSERT INTO exercises (name, difficulty, difficulty, rating) VALUES ('"
-                //             + inputSplit[0] + "', '" + inputSplit[1] + "', '" + inputSplit[2] + "', '" + inputSplit[3] + "');");
 
                 string insertToExercises = string.Format("INSERT INTO exercises (name, difficulty, rating) "
                     + "VALUES ('{0}', '{1}', '{2}');", inputSplit[0], inputSplit[1], inputSplit[2]);
@@ -158,13 +188,15 @@ namespace LINQSQL
                     sqlCommand.Append(insertToBodyPart[i]);
                 }
                 sqlCommand.Append("COMMIT;");
-                Console.WriteLine(sqlCommand.ToString());
+//                Console.WriteLine(sqlCommand.ToString());
 
 
                 if (this.ModifyConnection("open"))
                 {
                     MySqlCommand cmd = new MySqlCommand(insertToExercises.ToString(), connection);
                     cmd.ExecuteNonQuery();
+                    //                   Console.WriteLine(insertToExercises.ToString() + "\n\nStatement executed!");
+                    Console.WriteLine("Added to Database!");
                     
                     this.ModifyConnection("close");
                     return true;
